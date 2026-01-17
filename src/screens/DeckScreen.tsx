@@ -142,6 +142,7 @@ const DeckScreen: React.FC = () => {
   };
 
   const currentPhoto = getCurrentPhoto();
+  const nextPhoto = photos[currentIndex + 1] ?? null;
   const trashCount = trashQueue.length;
   const hasPhotos = photos.length > 0;
   const isDone = currentIndex >= photos.length && hasPhotos;
@@ -158,11 +159,22 @@ const DeckScreen: React.FC = () => {
         <>
           {/* Card Stack */}
           <View style={styles.deckContainer}>
-            <SwipeCard
-              photo={isDone ? null : currentPhoto}
-              onSwipeLeft={handleSwipeLeft}
-              onSwipeRight={handleSwipeRight}
-            />
+            <View style={styles.cardStack}>
+              {nextPhoto && !isDone && (
+                <View style={styles.nextCard}>
+                  <FastImage
+                    source={{ uri: nextPhoto.uri }}
+                    style={styles.nextImage}
+                    resizeMode="cover"
+                  />
+                </View>
+              )}
+              <SwipeCard
+                photo={isDone ? null : currentPhoto}
+                onSwipeLeft={handleSwipeLeft}
+                onSwipeRight={handleSwipeRight}
+              />
+            </View>
           </View>
 
           {/* Bottom Controls */}
@@ -182,6 +194,17 @@ const DeckScreen: React.FC = () => {
               >
                 <Text style={styles.buttonText}>
                   🗑 Trash ({trashCount})
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.buttonRowSecondary}>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonPrimary]}
+                onPress={handlePickFolder}
+              >
+                <Text style={styles.buttonText}>
+                  {folderUri ? 'Change Folder' : 'Pick Folder'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -275,6 +298,21 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#f0f0f0',
   },
+  cardStack: {
+    flex: 1,
+  },
+  nextCard: {
+    ...StyleSheet.absoluteFillObject,
+    margin: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#e6e6e6',
+    transform: [{ scale: 0.98 }],
+  },
+  nextImage: {
+    width: '100%',
+    height: '100%',
+  },
   controlsContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -285,6 +323,10 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: 'row',
     gap: 12,
+  },
+  buttonRowSecondary: {
+    flexDirection: 'row',
+    marginTop: 10,
   },
   button: {
     flex: 1,
