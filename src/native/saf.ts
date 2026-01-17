@@ -11,6 +11,12 @@ interface SAFModule {
   getPhotoDimensions(photoUri: string): Promise<{ width: number; height: number }>;
 }
 
+if (!PhotoSwiperSAF) {
+  throw new Error(
+    'Native module PhotoSwiperSAF not found. Rebuild the Android app after adding the Kotlin module.'
+  );
+}
+
 const SafNative: SAFModule = PhotoSwiperSAF;
 
 export default SafNative;
