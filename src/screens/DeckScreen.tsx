@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,6 +8,7 @@ import {
   Alert,
   Modal,
   FlatList,
+  Animated,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import SwipeCard from '../components/SwipeCard';
@@ -35,6 +36,29 @@ const DeckScreen: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const [showTrash, setShowTrash] = React.useState(false);
+  const keepOpacity = useRef(new Animated.Value(0)).current;
+  const deleteOpacity = useRef(new Animated.Value(0)).current;
+
+  const animateOverlay = useCallback(
+    (direction: 'left' | 'right' | 'neutral') => {
+      const keepTo = direction === 'right' ? 1 : 0;
+      const deleteTo = direction === 'left' ? 1 : 0;
+
+      Animated.parallel([
+        Animated.timing(keepOpacity, {
+          toValue: keepTo,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+        Animated.timing(deleteOpacity, {
+          toValue: deleteTo,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    },
+    [keepOpacity, deleteOpacity]
+  );
 
   // Initialize: pick folder and load images
   useEffect(() => {
@@ -92,14 +116,23 @@ const DeckScreen: React.FC = () => {
     if (current) {
       markKeep(current.uri);
     }
-  }, [getCurrentPhoto, markKeep]);
+    animateOverlay('neutral');
+  }, [getCurrentPhoto, markKeep, animateOverlay]);
 
   const handleSwipeLeft = useCallback(() => {
     const current = getCurrentPhoto();
     if (current) {
       markDelete(current.uri);
     }
-  }, [getCurrentPhoto, markDelete]);
+    animateOverlay('neutral');
+  }, [getCurrentPhoto, markDelete, animateOverlay]);
+
+  const handleDirectionChange = useCallback(
+    (direction: 'left' | 'right' | 'neutral') => {
+      animateOverlay(direction);
+    },
+    [animateOverlay]
+  );
 
   const handleUndo = useCallback(() => {
     if (canUndo()) {
@@ -173,7 +206,14 @@ const DeckScreen: React.FC = () => {
                 photo={isDone ? null : currentPhoto}
                 onSwipeLeft={handleSwipeLeft}
                 onSwipeRight={handleSwipeRight}
+                onDirectionChange={handleDirectionChange}
               />
+              <Animated.View style={[styles.keepBadge, { opacity: keepOpacity }]}>
+                <Text style={styles.keepText}>KEEP</Text>
+              </Animated.View>
+              <Animated.View style={[styles.deleteBadge, { opacity: deleteOpacity }]}>
+                <Text style={styles.deleteText}>DELETE</Text>
+              </Animated.View>
             </View>
           </View>
 
@@ -312,6 +352,36 @@ const styles = StyleSheet.create({
   nextImage: {
     width: '100%',
     height: '100%',
+  },
+  keepBadge: {
+    position: 'absolute',
+    top: '40%',
+    alignSelf: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 16,
+    backgroundColor: 'rgba(76, 175, 80, 0.95)',
+  },
+  keepText: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  deleteBadge: {
+    position: 'absolute',
+    top: '40%',
+    alignSelf: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 16,
+    backgroundColor: 'rgba(244, 67, 54, 0.95)',
+  },
+  deleteText: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   controlsContainer: {
     paddingHorizontal: 16,

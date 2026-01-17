@@ -18,10 +18,38 @@ interface SwipeCardProps {
   onDirectionChange?: (direction: 'left' | 'right' | 'neutral') => void;
 }
 
+type SwipeCardContentProps = Omit<SwipeCardProps, 'photo'> & { photo: PhotoItem };
+
 const SWIPE_THRESHOLD = 120;
 const SWIPE_VELOCITY_THRESHOLD = 800;
 
 const SwipeCard: React.FC<SwipeCardProps> = ({
+  photo,
+  onSwipeLeft,
+  onSwipeRight,
+  onDirectionChange,
+}) => {
+  if (!photo) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.emptyState}>
+          <Animated.Text style={styles.emptyText}>No more photos</Animated.Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <SwipeCardContent
+      photo={photo}
+      onSwipeLeft={onSwipeLeft}
+      onSwipeRight={onSwipeRight}
+      onDirectionChange={onDirectionChange}
+    />
+  );
+};
+
+const SwipeCardContent: React.FC<SwipeCardContentProps> = ({
   photo,
   onSwipeLeft,
   onSwipeRight,
@@ -94,16 +122,6 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
     ],
   }));
 
-  if (!photo) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.emptyState}>
-          <Animated.Text style={styles.emptyText}>No more photos</Animated.Text>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <GestureDetector gesture={panGesture}>
       <Animated.View style={[styles.container, animatedStyle]}>
@@ -112,33 +130,6 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
           style={styles.image}
           resizeMode="cover"
         />
-        {/* Optional: Overlay indicators */}
-        <View style={styles.overlayContainer}>
-          <Animated.View
-            style={[
-              styles.likeOverlay,
-              {
-                opacity: useDerivedValue(() => {
-                  return Math.max(0, Math.min(1, translateX.value / 200));
-                }),
-              },
-            ]}
-          >
-            <Animated.Text style={styles.overlayText}>KEEP</Animated.Text>
-          </Animated.View>
-          <Animated.View
-            style={[
-              styles.dislikeOverlay,
-              {
-                opacity: useDerivedValue(() => {
-                  return Math.max(0, Math.min(1, -translateX.value / 200));
-                }),
-              },
-            ]}
-          >
-            <Animated.Text style={styles.overlayText}>DELETE</Animated.Text>
-          </Animated.View>
-        </View>
       </Animated.View>
     </GestureDetector>
   );
@@ -166,33 +157,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#666',
     fontWeight: '600',
-  },
-  overlayContainer: {
-    ...StyleSheet.absoluteFillObject,
-    pointerEvents: 'none',
-  },
-  likeOverlay: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: 'rgba(76, 175, 80, 0.8)',
-  },
-  dislikeOverlay: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: 'rgba(244, 67, 54, 0.8)',
-  },
-  overlayText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
   },
 });
 
