@@ -17,13 +17,15 @@ import SafNative from '../native/saf';
 import { PhotoItem } from '../types';
 import FastImage from 'react-native-fast-image';
 
+const PREFETCH_COUNT = 20;
+
 const DeckScreen: React.FC = () => {
-  const PREFETCH_COUNT = 20;
   const {
     photos,
     currentIndex,
     folderUri,
     setPhotos,
+    appendPhotos,
     setFolderUri,
     markKeep,
     markDelete,
@@ -37,6 +39,7 @@ const DeckScreen: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const [showTrash, setShowTrash] = React.useState(false);
+  const [hasMore, setHasMore] = React.useState(true);
   const keepOpacity = useRef(new Animated.Value(0)).current;
   const deleteOpacity = useRef(new Animated.Value(0)).current;
 
@@ -116,7 +119,14 @@ const DeckScreen: React.FC = () => {
       const pageSize = 20; // Batch size
       const newPhotos = await SafNative.listImages(uri, pageSize, offset);
       if (newPhotos && newPhotos.length > 0) {
-        setPhotos(offset === 0 ? newPhotos : [...photos, ...newPhotos]);
+        if (offset === 0) {
+          setPhotos(newPhotos);
+        } else {
+          appendPhotos(newPhotos);
+        }
+        setHasMore(true);
+      } else if (offset > 0) {
+        setHasMore(false);
       }
     } catch (error) {
       Alert.alert('Error', `Failed to load photos: ${error}`);
@@ -124,7 +134,7 @@ const DeckScreen: React.FC = () => {
   };
 
   const loadMorePhotos = async () => {
-    if (loadingMore || !folderUri) return;
+    if (loadingMore || !folderUri || !hasMore) return;
     setLoadingMore(true);
     try {
       await loadPhotosFromFolder(folderUri, photos.length);

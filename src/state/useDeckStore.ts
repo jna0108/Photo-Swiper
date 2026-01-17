@@ -13,6 +13,7 @@ interface DeckStore {
 
   // Setters
   setPhotos: (photos: PhotoItem[]) => void;
+  appendPhotos: (photos: PhotoItem[]) => void;
   setCurrentIndex: (index: number) => void;
   setFolderUri: (uri: string | null) => void;
 
@@ -37,6 +38,17 @@ const useDeckStore = create<DeckStore>((set, get) => ({
   trashQueue: [],
 
   setPhotos: (photos) => set({ photos, currentIndex: 0 }),
+  appendPhotos: (newPhotos) => {
+    const existing = get().photos;
+    const merged = [...existing, ...newPhotos];
+    const seen = new Set<string>();
+    const unique = merged.filter((item) => {
+      if (seen.has(item.uri)) return false;
+      seen.add(item.uri);
+      return true;
+    });
+    set({ photos: unique });
+  },
   setCurrentIndex: (index) => set({ currentIndex: index }),
   setFolderUri: (uri) => set({ folderUri: uri }),
 
@@ -52,11 +64,13 @@ const useDeckStore = create<DeckStore>((set, get) => ({
   },
 
   markDelete: (photoUri) => {
-    const { actions, photos, currentIndex } = get();
+    const { actions, photos, currentIndex, trashQueue } = get();
     const photo = photos.find((p) => p.uri === photoUri);
+    const alreadyInTrash = trashQueue.some((p) => p.uri === photoUri);
     set({
       actions: [...actions, { photoUri, action: 'delete', timestamp: Date.now() }],
-      trashQueue: photo ? [...get().trashQueue, photo] : get().trashQueue,
+      trashQueue:
+        photo && !alreadyInTrash ? [...trashQueue, photo] : trashQueue,
     });
     if (currentIndex < photos.length - 1) {
       set({ currentIndex: currentIndex + 1 });
