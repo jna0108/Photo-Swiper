@@ -8,3 +8,15 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# Reanimated / Worklets
+-keep class com.swmansion.reanimated.** { *; }
+-keep class com.swmansion.worklets.** { *; }
+-dontwarn com.swmansion.reanimated.**
+-dontwarn com.swmansion.worklets.**
+
+# React Native view props
+-keepclassmembers class * {
+	@com.facebook.react.uimanager.annotations.ReactProp <fields>;
+	@com.facebook.react.uimanager.annotations.ReactPropGroup <fields>;
+}
