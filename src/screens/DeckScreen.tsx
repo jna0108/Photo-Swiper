@@ -344,12 +344,23 @@ const DeckScreen: React.FC = () => {
           />
 
           <View style={styles.trashFooter}>
-            <TouchableOpacity
-              style={styles.trashDeleteButton}
-              onPress={handleDeleteTrash}
-            >
-              <Text style={styles.trashDeleteText}>Delete All</Text>
-            </TouchableOpacity>
+            <View style={styles.trashFooterRow}>
+              <TouchableOpacity
+                style={styles.trashClearButton}
+                onPress={() => {
+                  clearTrash();
+                  setShowTrash(false);
+                }}
+              >
+                <Text style={styles.trashClearText}>Clear Trash</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.trashDeleteButton}
+                onPress={handleDeleteTrash}
+              >
+                <Text style={styles.trashDeleteText}>Delete All</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -542,7 +553,26 @@ const styles = StyleSheet.create({
     borderTopColor: '#eee',
     backgroundColor: '#fff',
   },
+  trashFooterRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  trashClearButton: {
+    flex: 1,
+    backgroundColor: '#555',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trashClearText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
   trashDeleteButton: {
+    flex: 1,
     backgroundColor: '#E53935',
     paddingVertical: 14,
     borderRadius: 12,
