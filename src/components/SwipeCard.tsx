@@ -111,6 +111,9 @@ const SwipeCardContent: React.FC<SwipeCardContentProps> = ({
         // Snap back
         translateX.value = withSpring(0, { damping: 8, mass: 1 });
         translateY.value = withSpring(0, { damping: 8, mass: 1 });
+        if (onDirectionChange) {
+          runOnJS(onDirectionChange)('neutral');
+        }
       }
     });
 
