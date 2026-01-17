@@ -93,7 +93,19 @@ const DeckScreen: React.FC = () => {
         await loadPhotosFromFolder(uri);
       }
     } catch (error) {
-      Alert.alert('Error', `Failed to pick folder: ${error}`);
+      Alert.alert(
+        'Folder Selection',
+        'Folder selection was canceled or failed. Would you like to try again?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Retry',
+            onPress: () => {
+              handlePickFolder();
+            },
+          },
+        ]
+      );
     } finally {
       setLoading(false);
     }
