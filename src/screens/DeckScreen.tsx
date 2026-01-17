@@ -6,12 +6,15 @@ import {
   Text,
   ActivityIndicator,
   Alert,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import SwipeCard from '../components/SwipeCard';
 import useDeckStore from '../state/useDeckStore';
 import SafNative from '../native/saf';
 import { PhotoItem } from '../types';
+import FastImage from 'react-native-fast-image';
 
 const DeckScreen: React.FC = () => {
   const {
@@ -24,13 +27,14 @@ const DeckScreen: React.FC = () => {
     markDelete,
     undo,
     canUndo,
-    getTrashCount,
+    trashQueue,
     clearTrash,
     getCurrentPhoto,
   } = useDeckStore();
 
   const [loading, setLoading] = React.useState(false);
   const [loadingMore, setLoadingMore] = React.useState(false);
+  const [showTrash, setShowTrash] = React.useState(false);
 
   // Initialize: pick folder and load images
   useEffect(() => {
@@ -104,7 +108,7 @@ const DeckScreen: React.FC = () => {
   }, [canUndo, undo]);
 
   const handleDeleteTrash = async () => {
-    const trashCount = getTrashCount();
+    const trashCount = trashQueue.length;
     if (trashCount === 0) {
       Alert.alert('Empty', 'No photos to delete');
       return;
@@ -123,6 +127,7 @@ const DeckScreen: React.FC = () => {
               // TODO: Implement batch delete via native module
               // For now, just clear the trash queue
               clearTrash();
+              setShowTrash(false);
               Alert.alert('Success', 'Photos deleted');
             } catch (error) {
               Alert.alert('Error', `Failed to delete: ${error}`);
@@ -137,9 +142,10 @@ const DeckScreen: React.FC = () => {
   };
 
   const currentPhoto = getCurrentPhoto();
-  const trashCount = getTrashCount();
+  const trashCount = trashQueue.length;
   const hasPhotos = photos.length > 0;
   const isDone = currentIndex >= photos.length && hasPhotos;
+  const trashItems = trashQueue;
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -172,7 +178,7 @@ const DeckScreen: React.FC = () => {
 
               <TouchableOpacity
                 style={[styles.button, styles.buttonDelete]}
-                onPress={handleDeleteTrash}
+                onPress={() => setShowTrash(true)}
               >
                 <Text style={styles.buttonText}>
                   🗑 Trash ({trashCount})
@@ -201,6 +207,48 @@ const DeckScreen: React.FC = () => {
           </View>
         </>
       )}
+
+      <Modal
+        visible={showTrash}
+        animationType="slide"
+        onRequestClose={() => setShowTrash(false)}
+      >
+        <View style={styles.trashContainer}>
+          <View style={styles.trashHeader}>
+            <Text style={styles.trashTitle}>Trash Queue ({trashCount})</Text>
+            <TouchableOpacity
+              style={styles.trashCloseButton}
+              onPress={() => setShowTrash(false)}
+            >
+              <Text style={styles.trashCloseText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+
+          <FlatList
+            style={styles.trashListContainer}
+            data={trashItems}
+            keyExtractor={(item) => item.uri}
+            contentContainerStyle={styles.trashList}
+            renderItem={({ item }) => (
+              <View style={styles.trashItem}>
+                <FastImage source={{ uri: item.uri }} style={styles.trashImage} />
+                <Text style={styles.trashName} numberOfLines={1}>
+                  {item.name}
+                </Text>
+              </View>
+            )}
+          />
+
+          <View style={styles.trashFooter}>
+            <TouchableOpacity
+              style={styles.trashDeleteButton}
+              onPress={handleDeleteTrash}
+            >
+              <Text style={styles.trashDeleteText}>Delete All</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </GestureHandlerRootView>
   );
 };
@@ -282,6 +330,77 @@ const styles = StyleSheet.create({
   loadingMoreText: {
     fontSize: 12,
     color: '#666',
+  },
+  trashContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  trashHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  trashTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111',
+  },
+  trashCloseButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#333',
+  },
+  trashCloseText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  trashList: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  trashListContainer: {
+    flex: 1,
+  },
+  trashItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12,
+  },
+  trashImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    backgroundColor: '#eee',
+  },
+  trashName: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+  },
+  trashFooter: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    backgroundColor: '#fff',
+  },
+  trashDeleteButton: {
+    backgroundColor: '#E53935',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trashDeleteText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
 });
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -29,6 +29,11 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
 }) => {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
+
+  useEffect(() => {
+    translateX.value = 0;
+    translateY.value = 0;
+  }, [photo?.uri, translateX, translateY]);
 
   // Rotation based on horizontal drag
   const rotate = useDerivedValue(() => {
