@@ -167,11 +167,20 @@ const DeckScreen: React.FC = () => {
           onPress: async () => {
             try {
               setLoading(true);
-              // TODO: Implement batch delete via native module
-              // For now, just clear the trash queue
+              const results = await Promise.all(
+                trashQueue.map((item) => SafNative.deletePhoto(item.uri))
+              );
+              const failedCount = results.filter((ok) => !ok).length;
               clearTrash();
               setShowTrash(false);
-              Alert.alert('Success', 'Photos deleted');
+              if (failedCount > 0) {
+                Alert.alert(
+                  'Partial Success',
+                  `${failedCount} photo(s) failed to delete. Check permissions.`
+                );
+              } else {
+                Alert.alert('Success', 'Photos deleted');
+              }
             } catch (error) {
               Alert.alert('Error', `Failed to delete: ${error}`);
             } finally {
