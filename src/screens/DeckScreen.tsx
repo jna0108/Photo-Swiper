@@ -18,6 +18,7 @@ import { PhotoItem } from '../types';
 import FastImage from 'react-native-fast-image';
 
 const DeckScreen: React.FC = () => {
+  const PREFETCH_COUNT = 20;
   const {
     photos,
     currentIndex,
@@ -73,6 +74,15 @@ const DeckScreen: React.FC = () => {
       loadMorePhotos();
     }
   }, [currentIndex, photos.length]);
+
+  // Prefetch upcoming images to reduce swipe delay
+  useEffect(() => {
+    if (photos.length === 0) return;
+    const upcoming = photos.slice(currentIndex + 1, currentIndex + 1 + PREFETCH_COUNT);
+    if (upcoming.length > 0) {
+      FastImage.preload(upcoming.map((item) => ({ uri: item.uri })));
+    }
+  }, [photos, currentIndex]);
 
   const handlePickFolder = async () => {
     try {

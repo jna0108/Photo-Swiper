@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -6,6 +6,7 @@ import Animated, {
   withSpring,
   runOnJS,
   useDerivedValue,
+  withTiming,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import FastImage from 'react-native-fast-image';
@@ -55,12 +56,14 @@ const SwipeCardContent: React.FC<SwipeCardContentProps> = ({
   onSwipeRight,
   onDirectionChange,
 }) => {
+  const [isSwipingOut, setIsSwipingOut] = useState(false);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
   useEffect(() => {
     translateX.value = 0;
     translateY.value = 0;
+    setIsSwipingOut(false);
   }, [photo?.uri, translateX, translateY]);
 
   // Rotation based on horizontal drag
@@ -77,6 +80,7 @@ const SwipeCardContent: React.FC<SwipeCardContentProps> = ({
 
   // Pan gesture handler
   const panGesture = Gesture.Pan()
+    .enabled(!isSwipingOut)
     .onUpdate((e) => {
       translateX.value = e.translationX;
       translateY.value = e.translationY;
@@ -99,16 +103,25 @@ const SwipeCardContent: React.FC<SwipeCardContentProps> = ({
 
       if (shouldSwipeRight) {
         // Swipe right (keep)
-        translateX.value = withSpring(500, { damping: 10, mass: 1 }, () =>
-          runOnJS(onSwipeRight)()
-        );
+        runOnJS(setIsSwipingOut)(true);
+        if (onDirectionChange) {
+          runOnJS(onDirectionChange)('neutral');
+        }
+        translateX.value = withTiming(500, { duration: 180 }, () => {
+          runOnJS(onSwipeRight)();
+        });
       } else if (shouldSwipeLeft) {
         // Swipe left (delete)
-        translateX.value = withSpring(-500, { damping: 10, mass: 1 }, () =>
-          runOnJS(onSwipeLeft)()
-        );
+        runOnJS(setIsSwipingOut)(true);
+        if (onDirectionChange) {
+          runOnJS(onDirectionChange)('neutral');
+        }
+        translateX.value = withTiming(-500, { duration: 180 }, () => {
+          runOnJS(onSwipeLeft)();
+        });
       } else {
         // Snap back
+        runOnJS(setIsSwipingOut)(false);
         translateX.value = withSpring(0, { damping: 8, mass: 1 });
         translateY.value = withSpring(0, { damping: 8, mass: 1 });
         if (onDirectionChange) {
@@ -127,7 +140,10 @@ const SwipeCardContent: React.FC<SwipeCardContentProps> = ({
 
   return (
     <GestureDetector gesture={panGesture}>
-      <Animated.View style={[styles.container, animatedStyle]}>
+      <Animated.View
+        style={[styles.container, animatedStyle]}
+        pointerEvents={isSwipingOut ? 'none' : 'auto'}
+      >
         <FastImage
           source={{ uri: photo.uri }}
           style={styles.image}
